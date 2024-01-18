@@ -1,0 +1,1 @@
+DATABASE_URL = "postgresql://iconanastas:leothebestcat1@localhost/iconanastas"
