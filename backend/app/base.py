@@ -16,7 +16,7 @@ async def lifespan(app):
 app = FastAPI(lifespan=lifespan)
 
 
-from backend.app.main.routers import users, photoshoots, reviews, photos, photographers, messages, comments
+from backend.app.main.routers import auth, users, photoshoots, reviews, photos, photographers, messages, comments
 
 app.include_router(users.router, prefix="/users", tags=["users"])
 app.include_router(photoshoots.router, prefix="/photoshoots", tags=["photoshoots"])
@@ -25,6 +25,7 @@ app.include_router(photos.router, prefix="/photos", tags=["photos"])
 app.include_router(photographers.router, prefix="/photographers", tags=["photographers"])
 app.include_router(messages.router, prefix="/messages", tags=["messages"])
 app.include_router(comments.router, prefix="/comments", tags=["comments"])
+app.include_router(auth.router, prefix="/auth", tags=["auth"])
 
 if __name__ == "__main__":
     import uvicorn

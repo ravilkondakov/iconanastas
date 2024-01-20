@@ -6,16 +6,22 @@ from backend.app.main.schemas import UserCreate
 
 class UserCRUD:
     @staticmethod
-    async def is_username(user: UserCreate):
-        if await UserModel.query.where(UserModel.username == user.username).gino.first():
+    async def is_username(username: str):
+        if await UserModel.query.where(UserModel.username == username).gino.first():
             raise HTTPException(status_code=400, detail="User already exists")
+        user = UserModel.query.where(UserModel.username == username).gino.first()
         return user
 
     @staticmethod
-    async def get_user(user_id: int):
-        user = await UserModel.query.where(UserModel.id == user_id).gino.first()
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found")
+    async def get_user(user_id: int = None, username: str = None):
+        if user_id:
+            user = await UserModel.query.where(UserModel.id == user_id).gino.first()
+            if not user:
+                raise HTTPException(status_code=404, detail="User not found")
+        else:
+            user = await UserModel.query.where(UserModel.username == username).gino.first()
+            if not user:
+                raise HTTPException(status_code=404, detail="User not found")
         return user
 
     @staticmethod

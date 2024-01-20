@@ -1,9 +1,14 @@
+from typing import List, Optional, Dict
+
 from pydantic import BaseModel
 
 
 class UserBase(BaseModel):
     username: str
     phone: str
+
+    class Config:
+        from_attributes = True
 
 
 class UserCreate(UserBase):
@@ -17,12 +22,15 @@ class User(UserBase):
         from_attributes = True
 
 
+class UserAuth(BaseModel):
+    username: str
+    password: str
+
+
 class PhotographerBase(BaseModel):
-    """Добавьте поля для фотографа"""
-
-
-class PhotographerCreate(PhotographerBase):
-    pass
+    user_id: int
+    insta_name: str
+    title: str
 
 
 class Photographer(PhotographerBase):
@@ -32,12 +40,24 @@ class Photographer(PhotographerBase):
         from_attributes = True
 
 
+class PhotographerCreate(PhotographerBase):
+    pass
+
+
 class PhotoshootBase(BaseModel):
-    """Добавьте поля для фотосессии"""
+    limit: int
+    description: str
+    title: str
+
+    class Config:
+        from_attributes = True
 
 
 class PhotoshootCreate(PhotoshootBase):
-    pass
+    photoshoots: List[PhotographerBase]
+
+    class Config:
+        from_attributes = True
 
 
 class Photoshoot(PhotoshootBase):
@@ -78,7 +98,9 @@ class Review(ReviewBase):
 
 
 class CommentBase(BaseModel):
-    """Добавьте поля для комментария"""
+    user_id: int
+    photoshoot_id: int
+    text: str
 
 
 class CommentCreate(CommentBase):

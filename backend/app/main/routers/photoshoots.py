@@ -1,51 +1,44 @@
 from fastapi import Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy import select
 
+from backend.app.main.crud.photoshoot import PhotoshootCRUD
 from backend.app.main.db.base import get_db
-from backend.app.main.models import Photoshoot as PhotoshootModel
-from backend.app.main.schemas import PhotoshootCreate, Photoshoot
+from backend.app.main.models import Photoshoot as PhotoshootModel, Photographer, db as gino_db
+from backend.app.main.routers.auth import get_current_user
+from backend.app.main.schemas import PhotoshootCreate, Photoshoot, PhotoshootBase
 from fastapi import APIRouter
 
 router = APIRouter()
 
-
-@router.post("/photoshoots/", response_model=Photoshoot)
-async def create_photoshoot(photoshoot: PhotoshootCreate, db: Session = Depends(get_db)):
-    db_photoshoot = PhotoshootModel(**photoshoot.dict())
-    db.add(db_photoshoot)
-    db.commit()
-    db.refresh(db_photoshoot)
-    return db_photoshoot
+DEFAULT_PHOTO_LIMIT = 15
 
 
-@router.get("/photoshoots/{photoshoot_id}", response_model=Photoshoot)
-async def read_photoshoot(photoshoot_id: int, db: Session = Depends(get_db)):
-    photoshoot = db.query(PhotoshootModel).filter(PhotoshootModel.id == photoshoot_id).first()
-    if not photoshoot:
-        raise HTTPException(status_code=404, detail="Photoshoot not found")
+@router.post("/create-photoshoot")
+async def create_photoshoot(photoshoot: PhotoshootBase, current_user: dict = Depends(get_current_user)):
+    photographer = await Photographer.query.where(Photographer.user_id == current_user).gino.first()
+    if not photographer:
+        raise HTTPException(status_code=404, detail="Photographer not found")
+    await PhotoshootCRUD.is_photoshoot(photoshoot.title)
+    photoshoot = await PhotoshootCRUD.create_photoshoot(photographer_id=photographer.id, title=photoshoot.title,
+                                                        description=photoshoot.description,
+                                                        limit=photoshoot.limit, )
+
     return photoshoot
 
 
-@router.put("/photoshoots/{photoshoot_id}", response_model=Photoshoot)
-async def update_photoshoot(photoshoot_id: int, photoshoot_in: PhotoshootCreate, db: Session = Depends(get_db)):
-    photoshoot = db.query(PhotoshootModel).filter(PhotoshootModel.id == photoshoot_id).first()
+# Выбор фотографий для фотосессии
+@router.post("/select-photos/{photoshoot_id}")
+async def select_photos(photoshoot_id: int, selected_photos: list[int], db: gino_db = Depends(get_db)):
+    # Проверяем существование фотосессии
+    photoshoot = await Photoshoot.get(photoshoot_id)
     if not photoshoot:
         raise HTTPException(status_code=404, detail="Photoshoot not found")
 
-    for field, value in photoshoot_in.dict().items():
-        setattr(photoshoot, field, value)
+    # Проверяем, что количество выбранных фотографий не превышает лимит
+    if len(selected_photos) > photoshoot.limit:
+        raise HTTPException(status_code=400, detail="Exceeded photo selection limit")
 
-    db.commit()
-    db.refresh(photoshoot)
-    return photoshoot
+    # Дополнительная логика для обработки выбранных фотографий
+    # ...
 
-
-@router.delete("/photoshoots/{photoshoot_id}", response_model=Photoshoot)
-async def delete_photoshoot(photoshoot_id: int, db: Session = Depends(get_db)):
-    photoshoot = db.query(PhotoshootModel).filter(PhotoshootModel.id == photoshoot_id).first()
-    if not photoshoot:
-        raise HTTPException(status_code=404, detail="Photoshoot not found")
-
-    db.delete(photoshoot)
-    db.commit()
-    return photoshoot
+    return {"message": "Photos selected successfully"}

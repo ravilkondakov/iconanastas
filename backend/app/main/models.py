@@ -27,7 +27,7 @@ class Photographer(db.Model):
     user = relationship('User', back_populates='photographer_profile')
     insta_name = db.Column(String(255), unique=True, index=True, nullable=False)
     title = db.Column(String(255), nullable=False)
-    date = db.Column(Date, nullable=False)
+    date = db.Column(Date, nullable=False, default=datetime.utcnow)
     photoshoots = relationship('Photoshoot', back_populates='photographer')
 
 
@@ -38,8 +38,10 @@ class Photoshoot(db.Model):
     photographer_id = db.Column(Integer, ForeignKey('photographers.id'), nullable=False)
     title = db.Column(String(255), index=True, nullable=False)
     description = db.Column(Text)
+    limit = db.Column(Integer, default=15)
     created_at = db.Column(DateTime, default=datetime.utcnow)
     photographer = relationship('Photographer', back_populates='photoshoots')
+    comments = relationship('Comment', back_populates='comments')
 
 
 class Photo(db.Model):

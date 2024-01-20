@@ -1,5 +1,4 @@
-from fastapi import Depends, HTTPException
-from sqlalchemy.orm import Session
+from fastapi import Depends
 
 from backend.app.main.crud.user import UserCRUD
 from backend.app.main.db.base import get_db
@@ -10,21 +9,21 @@ from fastapi import APIRouter
 router = APIRouter()
 
 
-@router.post("/users/", response_model=User)
+@router.post("/create", response_model=User)
 async def create_user(user: UserCreate, db: gino_db = Depends(get_db)):
-    await UserCRUD.is_username(user)
+    await UserCRUD.is_username(user.username)
     async with db.transaction():
         new_user = await UserCRUD.create_user(user)
     return new_user
 
 
-@router.get("/users/{user_id}", response_model=UserBase)
+@router.get("/get/{user_id}", response_model=UserBase)
 async def read_user(user_id: int):
     user = await UserCRUD.get_user(user_id)
     return user
 
 
-@router.put("/users/{user_id}", response_model=User)
+@router.put("/update/{user_id}", response_model=User)
 async def update_user(user_id: int, user_in: UserCreate):
     user = await UserCRUD.get_user(user_id)
     await user.update(**user_in.dict(exclude_unset=True)).apply()
